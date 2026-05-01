@@ -12,64 +12,46 @@ class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Цифровая Библиотека — Вход")
-        self.setFixedSize(420, 360)
-        self._setup_ui()
+        self.setFixedSize(400, 340)
+        self.setup_ui()
 
-    def _setup_ui(self):
+    def setup_ui(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(50, 40, 50, 40)
-        layout.setSpacing(14)
+        layout.setSpacing(12)
 
-        title = QLabel("📚 Цифровая Библиотека")
-        title.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        title = QLabel("Цифровая Библиотека")
+        title.setFont(QFont("Arial", 16, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel("Вход в систему")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("color: gray; font-size: 13px;")
-        layout.addWidget(subtitle)
-
-        layout.addSpacing(8)
+        layout.addSpacing(10)
 
         self.login_edit = QLineEdit()
         self.login_edit.setPlaceholderText("Логин")
-        self.login_edit.setMinimumHeight(36)
         layout.addWidget(self.login_edit)
 
         self.password_edit = QLineEdit()
         self.password_edit.setPlaceholderText("Пароль")
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_edit.setMinimumHeight(36)
-        self.password_edit.returnPressed.connect(self._on_login)
+        self.password_edit.returnPressed.connect(self.on_login)
         layout.addWidget(self.password_edit)
 
         btn_login = QPushButton("Войти")
-        btn_login.setMinimumHeight(40)
-        btn_login.setStyleSheet(
-            "background-color: #4CAF50; color: white; "
-            "font-size: 14px; border-radius: 5px;"
-        )
-        btn_login.clicked.connect(self._on_login)
+        btn_login.setStyleSheet("background-color: #4CAF50; color: white; font-size: 14px;")
+        btn_login.clicked.connect(self.on_login)
         layout.addWidget(btn_login)
 
-        sep = QLabel("— или —")
-        sep.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sep.setStyleSheet("color: gray;")
-        layout.addWidget(sep)
+        layout.addWidget(QLabel(""))
 
         btn_register = QPushButton("Зарегистрироваться")
-        btn_register.setMinimumHeight(36)
-        btn_register.setStyleSheet(
-            "background-color: #2196F3; color: white; "
-            "font-size: 13px; border-radius: 5px;"
-        )
-        btn_register.clicked.connect(self._open_register)
+        btn_register.setStyleSheet("background-color: #2196F3; color: white;")
+        btn_register.clicked.connect(self.open_register)
         layout.addWidget(btn_register)
 
         self.setLayout(layout)
 
-    def _on_login(self):
+    def on_login(self):
         username = self.login_edit.text().strip()
         password = self.password_edit.text()
 
@@ -84,84 +66,73 @@ class LoginWindow(QWidget):
 
         if user["is_admin"]:
             from admin_window import AdminWindow
-            self._next = AdminWindow(user)
+            self.next_window = AdminWindow(user)
         else:
             from main_window import MainWindow
-            self._next = MainWindow(user)
+            self.next_window = MainWindow(user)
 
-        self._next.show()
+        self.next_window.show()
         self.close()
 
-    def _open_register(self):
-        self._reg = RegisterWindow()
-        self._reg.show()
+    def open_register(self):
+        self.reg_window = RegisterWindow()
+        self.reg_window.show()
 
 
 class RegisterWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Регистрация читателя")
-        self.setFixedSize(420, 420)
-        self._setup_ui()
+        self.setFixedSize(400, 380)
+        self.setup_ui()
 
-    def _setup_ui(self):
+    def setup_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(50, 40, 50, 40)
-        layout.setSpacing(12)
+        layout.setContentsMargins(50, 30, 50, 30)
+        layout.setSpacing(10)
 
         title = QLabel("Регистрация читателя")
-        title.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        title.setFont(QFont("Arial", 14, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        layout.addSpacing(6)
-
         self.fullname_edit = QLineEdit()
         self.fullname_edit.setPlaceholderText("ФИО")
-        self.fullname_edit.setMinimumHeight(36)
         layout.addWidget(self.fullname_edit)
 
         self.login_edit = QLineEdit()
         self.login_edit.setPlaceholderText("Логин")
-        self.login_edit.setMinimumHeight(36)
         layout.addWidget(self.login_edit)
 
         self.password_edit = QLineEdit()
         self.password_edit.setPlaceholderText("Пароль (минимум 4 символа)")
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_edit.setMinimumHeight(36)
         layout.addWidget(self.password_edit)
 
         self.confirm_edit = QLineEdit()
         self.confirm_edit.setPlaceholderText("Подтвердите пароль")
         self.confirm_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.confirm_edit.setMinimumHeight(36)
         layout.addWidget(self.confirm_edit)
 
         self.card_edit = QLineEdit()
         self.card_edit.setPlaceholderText("Номер читательского билета")
-        self.card_edit.setMinimumHeight(36)
         layout.addWidget(self.card_edit)
 
         btn = QPushButton("Зарегистрироваться")
-        btn.setMinimumHeight(40)
-        btn.setStyleSheet(
-            "background-color: #4CAF50; color: white; "
-            "font-size: 14px; border-radius: 5px;"
-        )
-        btn.clicked.connect(self._on_register)
+        btn.setStyleSheet("background-color: #4CAF50; color: white; font-size: 14px;")
+        btn.clicked.connect(self.on_register)
         layout.addWidget(btn)
 
         self.setLayout(layout)
 
-    def _on_register(self):
+    def on_register(self):
         full_name   = self.fullname_edit.text().strip()
         login_name  = self.login_edit.text().strip()
         password    = self.password_edit.text()
         confirm     = self.confirm_edit.text()
         reader_card = self.card_edit.text().strip()
 
-        if not all([full_name, login_name, password, reader_card]):
+        if not full_name or not login_name or not password or not reader_card:
             QMessageBox.warning(self, "Ошибка", "Заполните все поля.")
             return
 
@@ -170,7 +141,7 @@ class RegisterWindow(QWidget):
             return
 
         if len(password) < 4:
-            QMessageBox.warning(self, "Ошибка", "Пароль должен содержать минимум 4 символа.")
+            QMessageBox.warning(self, "Ошибка", "Пароль слишком короткий (минимум 4 символа).")
             return
 
         ok, msg = db.register(full_name, login_name, password, reader_card)
