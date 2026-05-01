@@ -85,19 +85,19 @@ def init_db():
         ("Анна Каренина", "Лев Толстой", 1878, "Роман"),
         ("Маленький принц", "Антуан де Сент-Экзюпери", 1943, "Сказка"),
     ]
-    for b in sample:
-        try:
+    count = conn.execute("SELECT COUNT(*) FROM books").fetchone()[0]
+
+    if count == 0:
+        for b in sample:
             conn.execute(
                 "INSERT INTO books (title, author, year, genre) VALUES (?, ?, ?, ?)", b
             )
-        except sqlite3.IntegrityError:
-            pass
-
     conn.commit()
     conn.close()
 
 
 # ── утилиты ─────────────────────────────────────────────────────────────────
+
 
 def _hash_password(password: str) -> str:
     """Возвращает строку 'salt_hex:hash_hex' на основе PBKDF2-HMAC-SHA256."""
@@ -119,11 +119,10 @@ def _verify_password(password: str, stored: str) -> bool:
 
 # ── пользователи ─────────────────────────────────────────────────────────────
 
+
 def login(username: str, password: str):
     conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM users WHERE login = ?", (username,)
-    ).fetchone()
+    row = conn.execute("SELECT * FROM users WHERE login = ?", (username,)).fetchone()
     conn.close()
     if row and _verify_password(password, row["password"]):
         return dict(row)
@@ -161,6 +160,7 @@ def get_all_users():
 
 # ── книги ────────────────────────────────────────────────────────────────────
 
+
 def get_books(genre=None, author=None, year=None, available=None, sort_by=None):
     query = """
         SELECT b.id, b.title, b.author, b.year, b.genre, b.is_available,
@@ -191,8 +191,8 @@ def get_books(genre=None, author=None, year=None, available=None, sort_by=None):
 
     order = {
         "rating": " ORDER BY avg_rating DESC",
-        "title":  " ORDER BY b.title ASC",
-        "year":   " ORDER BY b.year DESC",
+        "title": " ORDER BY b.title ASC",
+        "year": " ORDER BY b.year DESC",
         "author": " ORDER BY b.author ASC",
     }.get(sort_by, " ORDER BY b.id ASC")
     query += order
@@ -248,6 +248,7 @@ def get_genres():
 
 # ── выдача / возврат ──────────────────────────────────────────────────────────
 
+
 def borrow_book(book_id: int, user_id: int):
     """
     Возвращает (статус, сообщение).
@@ -275,7 +276,9 @@ def borrow_book(book_id: int, user_id: int):
         return "error", "Вы уже стоите в очереди на эту книгу."
 
     if row["is_available"]:
-        c.execute("INSERT INTO requests (book_id, user_id) VALUES (?, ?)", (book_id, user_id))
+        c.execute(
+            "INSERT INTO requests (book_id, user_id) VALUES (?, ?)", (book_id, user_id)
+        )
         c.execute("UPDATE books SET is_available=0 WHERE id=?", (book_id,))
         conn.commit()
         conn.close()
@@ -287,7 +290,9 @@ def borrow_book(book_id: int, user_id: int):
 
 def join_queue(book_id: int, user_id: int):
     conn = get_conn()
-    conn.execute("INSERT INTO queue (book_id, user_id) VALUES (?, ?)", (book_id, user_id))
+    conn.execute(
+        "INSERT INTO queue (book_id, user_id) VALUES (?, ?)", (book_id, user_id)
+    )
     conn.commit()
     conn.close()
 
@@ -339,10 +344,10 @@ def get_user_books(user_id: int):
 
 # ── рекомендации ─────────────────────────────────────────────────────────────
 
+
 def get_recommendations():
     conn = get_conn()
-    rows = conn.execute(
-        """SELECT b.id, b.title, b.author, b.year, b.genre,
+    rows = conn.execute("""SELECT b.id, b.title, b.author, b.year, b.genre,
                   COUNT(DISTINCT req.id)                AS borrow_count,
                   ROUND(COALESCE(AVG(rv.rating), 0), 1) AS avg_rating
            FROM books b
@@ -350,13 +355,13 @@ def get_recommendations():
            LEFT JOIN reviews  rv  ON b.id=rv.book_id
            GROUP BY b.id
            ORDER BY borrow_count DESC, avg_rating DESC
-           LIMIT 5"""
-    ).fetchall()
+           LIMIT 5""").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
 # ── отзывы ───────────────────────────────────────────────────────────────────
+
 
 def add_review(book_id: int, user_id: int, rating: int, comment: str):
     conn = get_conn()
@@ -389,14 +394,13 @@ def get_reviews(book_id: int):
 
 # ── заявки (для администратора) ───────────────────────────────────────────────
 
+
 def get_all_requests():
     conn = get_conn()
-    rows = conn.execute(
-        """SELECT r.id, b.title, u.full_name, r.status, r.created_at
+    rows = conn.execute("""SELECT r.id, b.title, u.full_name, r.status, r.created_at
            FROM requests r
            JOIN books b ON r.book_id=b.id
            JOIN users u ON r.user_id=u.id
-           ORDER BY r.created_at DESC"""
-    ).fetchall()
+           ORDER BY r.created_at DESC""").fetchall()
     conn.close()
     return [dict(r) for r in rows]
