@@ -1,5 +1,6 @@
-import sqlite3
 import hashlib
+import os
+import sqlite3
 
 DB_PATH = "library.db"
 
@@ -68,7 +69,7 @@ def init_db():
         conn.execute(
             "INSERT INTO users (full_name, login, password, reader_card, is_admin) "
             "VALUES (?, ?, ?, ?, ?)",
-            ("Администратор", "admin", _hash("admin"), "ADMIN-0001", 1),
+            ("Администратор", "admin", _hash_password("admin"), "ADMIN-0001", 1),
         )
     except sqlite3.IntegrityError:
         pass
@@ -98,8 +99,22 @@ def init_db():
 
 # ── утилиты ─────────────────────────────────────────────────────────────────
 
-def _hash(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+def _hash_password(password: str) -> str:
+    """Возвращает строку 'salt_hex:hash_hex' на основе PBKDF2-HMAC-SHA256."""
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 260_000)
+    return salt.hex() + ":" + dk.hex()
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    """Проверяет пароль против хранимой строки 'salt_hex:hash_hex'."""
+    try:
+        salt_hex, dk_hex = stored.split(":", 1)
+    except ValueError:
+        return False
+    salt = bytes.fromhex(salt_hex)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 260_000)
+    return dk.hex() == dk_hex
 
 
 # ── пользователи ─────────────────────────────────────────────────────────────
@@ -107,11 +122,12 @@ def _hash(password: str) -> str:
 def login(username: str, password: str):
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM users WHERE login = ? AND password = ?",
-        (username, _hash(password)),
+        "SELECT * FROM users WHERE login = ?", (username,)
     ).fetchone()
     conn.close()
-    return dict(row) if row else None
+    if row and _verify_password(password, row["password"]):
+        return dict(row)
+    return None
 
 
 def register(full_name: str, login_name: str, password: str, reader_card: str):
@@ -119,7 +135,7 @@ def register(full_name: str, login_name: str, password: str, reader_card: str):
     try:
         conn.execute(
             "INSERT INTO users (full_name, login, password, reader_card) VALUES (?, ?, ?, ?)",
-            (full_name, login_name, _hash(password), reader_card),
+            (full_name, login_name, _hash_password(password), reader_card),
         )
         conn.commit()
         return True, "Регистрация прошла успешно!"
