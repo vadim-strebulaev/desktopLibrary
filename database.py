@@ -11,7 +11,7 @@ def get_conn():
 
 
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return hashlib.pbkdf2_hmac("sha256", password.encode(), b"library_app_salt", 10000).hex()
 
 
 def init_db():
